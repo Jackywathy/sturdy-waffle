@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SturdyWaffle", "SturdyWaffle\SturdyWaffle.csproj", "{BCB7C456-585E-4773-AC56-56D21EA378DB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCB7C456-585E-4773-AC56-56D21EA378DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCB7C456-585E-4773-AC56-56D21EA378DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCB7C456-585E-4773-AC56-56D21EA378DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCB7C456-585E-4773-AC56-56D21EA378DB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
