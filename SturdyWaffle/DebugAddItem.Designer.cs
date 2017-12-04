@@ -142,7 +142,6 @@
             this.Name = "DebugAddItem";
             this.Text = "DebugAddItem";
             this.Load += new System.EventHandler(this.DebugAddItem_Load);
-            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.DebugAddItem_MouseDown);
             this.ResumeLayout(false);
             this.PerformLayout();
 

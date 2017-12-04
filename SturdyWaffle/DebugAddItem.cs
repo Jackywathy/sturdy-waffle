@@ -54,31 +54,11 @@ namespace SturdyWaffle
 
         }
 
-        private void DebugAddItem_MouseDown(object sender, MouseEventArgs e)
-        {
+      
 
-        }
+       
+ 
     }
 
-    public class ClientData
-    {
-        public readonly string FirstName;
-        public readonly string MiddleName;
-        public readonly string LastName;
-
-        public readonly DateTime DateOfBirth;
-
-        public ClientData(string firstName, string lastName, DateTime dateOfBirth, string middleName = null)
-        {
-            this.FirstName = firstName;
-            this.MiddleName = middleName;
-            this.LastName = lastName;
-            this.DateOfBirth = dateOfBirth;
-        }
-
-        public override string ToString()
-        {
-            return $"name: {FirstName} {MiddleName} {LastName}, DOB: {DateOfBirth}";
-        }
-    }
+    
 }

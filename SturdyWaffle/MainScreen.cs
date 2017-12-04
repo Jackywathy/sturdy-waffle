@@ -19,7 +19,7 @@ namespace SturdyWaffle
         }
 
         private DebugDataRetriever _debug;
-        private AccountDatabase _database;
+        private CompleteDatabase _database;
         private void Form1_Load(object sender, EventArgs e)
         {
 
@@ -34,7 +34,7 @@ namespace SturdyWaffle
             //}
             // DELETES THE DATABASE if needed for some reason
 
-            _database = System.IO.File.Exists("database.mdb") ? new AccountDatabase("database.mdb") : AccountDatabase.CreateEmptyDatabase("database.mdb");
+            _database = System.IO.File.Exists("database.mdb") ? new CompleteDatabase("database.mdb") : CompleteDatabase.CreateEmptyDatabase("database.mdb");
      
             _debug = new DebugDataRetriever("database.mdb");
 

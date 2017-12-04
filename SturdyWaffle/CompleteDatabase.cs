@@ -3,11 +3,54 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
 using System.IO;
+using System.Security.Permissions;
+using System.Windows.Forms;
 
 public enum DatabaseTables
 {
     Credentials,
-    Cards
+    Cards,
+    Accounts
+}
+
+public enum AccountType
+{
+    Savings,
+    Cheque,
+    Credit
+}
+
+public static class AccountTypeExtension
+{
+    public static string ToDatabaseString(this AccountType accountEnum)
+    {
+        switch (accountEnum)
+        {
+            case AccountType.Savings:
+                return "Savings";
+            case AccountType.Cheque:
+                return "Cheque";
+            case AccountType.Credit:
+                return "Credit";
+            default:
+                throw new InvalidCastException($"Cannot convert AccountType [{accountEnum}] to AccountType");
+        }
+    }
+
+    public static AccountType FromString(this AccountType accoutEnum, string accountString)
+    {
+        switch (accountString)
+        {
+            case "Savings":
+                return AccountType.Savings;
+            case "Cheque":
+                return AccountType.Cheque;
+            case "Credit":
+                return AccountType.Savings;
+            default:
+                throw new InvalidCastException($"Cannot convert '{accountString}' to AccountType");
+        }
+    }
 }
 
 namespace SturdyWaffle
@@ -49,14 +92,13 @@ namespace SturdyWaffle
             Refresh();
         }
 
-        public DebugDataRetriever(string path) : this(AccountDatabase.GetConnection(path))
+        public DebugDataRetriever(string path) : this(CompleteDatabase.GetConnection(path))
         {
-            
         }
 
     }
 
-    internal class AccountDatabase
+    internal class CompleteDatabase
     {
         private OleDbConnection _dbConnection;
         
@@ -70,10 +112,10 @@ namespace SturdyWaffle
 
         /// <summary>
         /// Creates a new database file
-        /// returns a AccountDatabase, connected to the new database
+        /// returns a CompleteDatabase, connected to the new database
         /// </summary>
         /// <param name="path">File path of the new database</param>
-        public static AccountDatabase CreateEmptyDatabase(string path, bool overwrite = false)
+        public static CompleteDatabase CreateEmptyDatabase(string path, bool overwrite = false)
         {
             // check if the file exists
             if (File.Exists(path) && !overwrite)
@@ -118,7 +160,7 @@ namespace SturdyWaffle
                 dbConnection
                                );
 
-            var database = new AccountDatabase(dbConnection);
+            var database = new CompleteDatabase(dbConnection);
 
             //connection.Execute("CREATE table Transactions (" +
             //                   "TRANSACTIONID INTEGER PRIMARY KEY" +
@@ -152,52 +194,69 @@ namespace SturdyWaffle
             using (OleDbCommand command = new OleDbCommand("SELECT (COUNT(*) + 1) FROM Clients", _dbConnection))
             {
                 _dbConnection.Open();
-                var reader = command.ExecuteReader();
-                reader.Read();
-                ret = (int)reader[0];
+                ret = (int) command.ExecuteScalar();
                 _dbConnection.Close();
             }
             return ret;
         }
 
         /// <summary>
-        /// Cuts the milliseconds / microseconds off so that it can fit in the database
+        /// Cuts datetime to just days
         /// MUST BE USED on DATETIME objects going into the database, or else the program will crash
         /// </summary>
         /// <param name="date"></param>
         /// <returns></returns>
         public static DateTime GetProcessedDateTime(DateTime date)
         {
-            return new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second);
+            return new DateTime(date.Year, date.Month, date.Day);
         }    
 
-        public void AddClient(string firstname, string lastname, DateTime dateOfBirth, string middlename = null)
+        public ClientData AddClient(string firstname, string lastname, DateTime dateOfBirth, string middlename = null)
         {
-            var insertCommand = new OleDbCommand("INSERT INTO Clients(FIRSTNAME, MIDDLENAME, LASTNAME, DATEOFBIRTH) VALUES (" +
-                                           "@FIRSTNAME, @MIDDLENAME, @LASTNAME, @DATEOFBIRTH);", _dbConnection);
-
+            var insertCommand = new OleDbCommand("INSERT INTO Clients(CLIENTNUMBER, FIRSTNAME, MIDDLENAME, LASTNAME, DATEOFBIRTH) VALUES (" +
+                                           "@CLIENTNUMBER, @FIRSTNAME, @MIDDLENAME, @LASTNAME, @DATEOFBIRTH);", _dbConnection);
+            var num = GetUniqueClientId();
+            insertCommand.Parameters.AddWithValue("@CLIENTNUMBER", num);
             insertCommand.Parameters.AddWithValue("@FIRSTNAME", firstname);
             insertCommand.Parameters.AddWithValue("@MIDDLENAME", middlename);
             insertCommand.Parameters.AddWithValue("@LASTNAME", lastname);
             insertCommand.Parameters.AddWithValue("@DATEOFBIRTH", GetProcessedDateTime(dateOfBirth));
             
             _dbConnection.Open();
-            insertCommand.ExecuteNonQuery();
+            insertCommand.ExecuteNonQuery();            
             _dbConnection.Close();
-        }
-        public void AddClient(ClientData data)
-        {
-            AddClient(data.FirstName, data.LastName, data.DateOfBirth, data.MiddleName);
+            return new ClientData(firstname, lastname, dateOfBirth, middlename, num);
         }
 
-        public AccountDatabase(OleDbConnection connection)
+        public ClientData AddClient(ClientData data)
+        {
+            return AddClient(data.FirstName, data.LastName, data.DateOfBirth, data.MiddleName);
+        }
+
+        public AccountData AddAccount(AccountData data)
+        {
+            return AddAccount(data.ClientNumber, data.AccountType);
+        }
+
+
+        public AccountData AddAccount(int clientData, AccountType accountType)
+        {
+            var insertCommand = new OleDbCommand("INSERT INTO Clients(CLIENTNUMBER, FIRSTNAME, MIDDLENAME, LASTNAME, DATEOFBIRTH) VALUES (" +
+                                                 "@CLIENTNUMBER, @FIRSTNAME, @MIDDLENAME, @LASTNAME, @DATEOFBIRTH);", _dbConnection);
+            return null;
+        }
+        
+
+
+
+        public CompleteDatabase(OleDbConnection connection)
         {
             _dbConnection = connection;
             // integrated SELECTED COMMMAND into the constructor
           
         }
 
-        public AccountDatabase(string path) : this(GetConnection(path))
+        public CompleteDatabase(string path) : this(GetConnection(path))
         {
 
         }
@@ -205,3 +264,48 @@ namespace SturdyWaffle
     }
 }
 
+
+public class ClientData
+{
+    public readonly string FirstName;
+    public readonly string MiddleName;
+    public readonly string LastName;
+
+    public readonly DateTime DateOfBirth;
+    public readonly int ClientNumber;
+
+    public ClientData(string firstName, string lastName, DateTime dateOfBirth, string middleName = null, int clientNumber = -1)
+    {
+        this.FirstName = firstName;
+        this.MiddleName = middleName;
+        this.LastName = lastName;
+        this.DateOfBirth = dateOfBirth;
+        this.ClientNumber = clientNumber;
+    }
+
+    public override string ToString()
+    {
+        return $"number {ClientNumber}, name: {FirstName} {MiddleName} {LastName}, DOB: {DateOfBirth}";
+    }
+}
+
+public class AccountData
+{
+    public readonly int ClientNumber;
+    public readonly AccountType AccountType;
+    public readonly int AccountNumber;
+
+
+
+    public AccountData(int clientNumber, AccountType accountType, int accountNumber = -1)
+    {
+        this.ClientNumber = clientNumber;
+        this.AccountType = accountType;
+        this.AccountNumber = accountNumber;
+    }
+
+    public override string ToString()
+    {
+        return $"Account Number: {AccountNumber}, ClientNumber: {ClientNumber}, AccountType: {AccountType.ToDatabaseString()}";
+    }
+}

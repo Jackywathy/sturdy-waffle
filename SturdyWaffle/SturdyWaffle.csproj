@@ -67,7 +67,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AccountDatabase.cs" />
+    <Compile Include="CompleteDatabase.cs" />
     <EmbeddedResource Include="DebugAddItem.resx">
       <DependentUpon>DebugAddItem.cs</DependentUpon>
     </EmbeddedResource>
