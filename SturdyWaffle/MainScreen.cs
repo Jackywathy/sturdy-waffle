@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -38,8 +39,8 @@ namespace SturdyWaffle
      
             _debug = new DebugDataRetriever("database.mdb");
 
-            dataGridView1.DataSource = _debug.CurrentDataSet;
-            dataGridView1.DataMember = "Clients";
+            dataGridClients.DataSource = _debug.CurrentDataSet;
+            dataGridClients.DataMember = "Clients";
 
             dataGridView2.DataSource = _debug.CurrentDataSet;
             dataGridView2.DataMember = "Accounts";
@@ -57,9 +58,36 @@ namespace SturdyWaffle
 
         private void btn_addClient_Click(object sender, EventArgs e)
         {
-            ClientData data = DebugAddItem.GetClientDataFromUser();
-            _database.AddClient(data);
-            _debug.Refresh();
+            ClientData data = DebugAddClient.GetClientDataFromUser();
+            if (data != null)
+            {
+                _database.AddClient(data.FirstName, data.MiddleName, data.LastName, data.DateOfBirth);
+                _debug.Refresh();
+            } 
+        }
+
+        private void btn_addAccount_Click(object sender, EventArgs e)
+        {
+            // check if a client is already selected
+            var clientNum = -1;
+            var selectedCells = dataGridClients.SelectedCells;
+            if (selectedCells.Count == 1)
+            {
+                var currentRow = dataGridClients.Rows[selectedCells[0].RowIndex];
+                clientNum = (int) currentRow.Cells[0].Value; // get the clientNumber if any cells are selected
+            }
+
+            AccountData data = DebugAddAccount.GetAccountDataFromUser(clientNum);
+            if (data != null) 
+            {
+                _database.AddAccount(data.ClientNumber, data.AccountType);
+                _debug.Refresh();
+            }
+        }
+
+        private void dataGridClients_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
         }
     }
 }

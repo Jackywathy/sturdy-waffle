@@ -1,6 +1,6 @@
 ﻿namespace SturdyWaffle
 {
-    partial class DebugAddItem
+    partial class DebugAddClient
     {
         /// <summary>
         /// Required designer variable.

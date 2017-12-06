@@ -10,12 +10,12 @@ using System.Windows.Forms;
 
 namespace SturdyWaffle
 {
-    public partial class DebugAddItem : Form
+    public partial class DebugAddClient : Form
     {
 
         public bool Cancelled = false;
 
-        public DebugAddItem()
+        public DebugAddClient()
         {
             InitializeComponent();
         }
@@ -41,12 +41,12 @@ namespace SturdyWaffle
 
         public static ClientData GetClientDataFromUser()
         {
-            var form = new DebugAddItem();
+            var form = new DebugAddClient();
             form.ShowDialog();
             if (!form.Cancelled)
             {
-                return new ClientData(form.textBox1.Text, form.textBox3.Text, form.dateTimePicker1.Value,
-                    form.textBox2.Text);
+                return new ClientData(-1, form.textBox1.Text,
+                    form.textBox2.Text, form.textBox3.Text, form.dateTimePicker1.Value);
             }
 
             return null;

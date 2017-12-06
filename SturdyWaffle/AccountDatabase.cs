@@ -2,76 +2,23 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
+using System.Data.SqlClient;
 using System.IO;
-
 
 public enum DatabaseTables
 {
     Credentials,
-    Cards,
-    Accounts
-}
-
-public enum AccountType
-{
-    Savings,
-    Cheque,
-    Credit
-}
-
-public static class AccountTypeExtension
-{
-    public static string ToDatabaseString(this AccountType accountEnum)
-    {
-        switch (accountEnum)
-        {
-            case AccountType.Savings:
-                return "Savings";
-            case AccountType.Cheque:
-                return "Cheque";
-            case AccountType.Credit:
-                return "Credit";
-            default:
-                throw new InvalidCastException($"Cannot convert AccountType [{accountEnum}] to AccountType");
-        }
-    }
-
-    public static AccountType FromString(this AccountType accountEnum, string accountString)
-    {
-        switch (accountString)
-        {
-            case "Savings":
-                return AccountType.Savings;
-            case "Cheque":
-                return AccountType.Cheque;
-            case "Credit":
-                return AccountType.Savings;
-            default:
-                throw new InvalidCastException($"Cannot convert '{accountString}' to AccountType");
-        }
-    }
-    public static AccountType FromString(string accountString)
-    {
-        switch (accountString)
-        {
-            case "Savings":
-                return AccountType.Savings;
-            case "Cheque":
-                return AccountType.Cheque;
-            case "Credit":
-                return AccountType.Savings;
-            default:
-                throw new InvalidCastException($"Cannot convert '{accountString}' to AccountType");
-        }
-    }
+    Cards
 }
 
 namespace SturdyWaffle
 {
+    internal class 
+
     internal class DebugDataRetriever
     {
-        private OleDbConnection _dbConnection;
-        private OleDbDataAdapter _dbAdapter;
+        private SqlConnection _dbConnection;
+        private SqlDataAdapter _dbAdapter;
 
         private IList<Tuple<string, OleDbCommand>> _refreshCommands = new List<Tuple<string, OleDbCommand>>();
 
@@ -105,13 +52,14 @@ namespace SturdyWaffle
             Refresh();
         }
 
-        public DebugDataRetriever(string path) : this(CompleteDatabase.GetConnection(path))
+        public DebugDataRetriever(string path) : this(AccountDatabase.GetConnection(path))
         {
+            
         }
 
     }
 
-    internal class CompleteDatabase
+    internal class AccountDatabase
     {
         private OleDbConnection _dbConnection;
         
@@ -125,10 +73,10 @@ namespace SturdyWaffle
 
         /// <summary>
         /// Creates a new database file
-        /// returns a CompleteDatabase, connected to the new database
+        /// returns a AccountDatabase, connected to the new database
         /// </summary>
         /// <param name="path">File path of the new database</param>
-        public static CompleteDatabase CreateEmptyDatabase(string path, bool overwrite = false)
+        public static AccountDatabase CreateEmptyDatabase(string path, bool overwrite = false)
         {
             // check if the file exists
             if (File.Exists(path) && !overwrite)
@@ -173,7 +121,7 @@ namespace SturdyWaffle
                 dbConnection
                                );
 
-            var database = new CompleteDatabase(dbConnection);
+            var database = new AccountDatabase(dbConnection);
 
             //connection.Execute("CREATE table Transactions (" +
             //                   "TRANSACTIONID INTEGER PRIMARY KEY" +
@@ -207,90 +155,52 @@ namespace SturdyWaffle
             using (OleDbCommand command = new OleDbCommand("SELECT (COUNT(*) + 1) FROM Clients", _dbConnection))
             {
                 _dbConnection.Open();
-                ret = (int) command.ExecuteScalar();
-                _dbConnection.Close();
-            }
-            return ret;
-        }
-
-        private int GetUniqueAccountId()
-        {
-            var ret = -1;
-            using (OleDbCommand command = new OleDbCommand("SELECT (COUNT(*) + 1) FROM Accounts", _dbConnection))
-            {
-                _dbConnection.Open();
-                ret = (int)command.ExecuteScalar();
-                _dbConnection.Close();
-            }
-            return ret;
-        }
-
-        private int GetUniqueCardId()
-        {
-            var ret = -1;
-            using (OleDbCommand command = new OleDbCommand("SELECT (COUNT(*) + 1) FROM Cards", _dbConnection))
-            {
-                _dbConnection.Open();
-                ret = (int)command.ExecuteScalar();
+                var reader = command.ExecuteReader();
+                reader.Read();
+                ret = (int)reader[0];
                 _dbConnection.Close();
             }
             return ret;
         }
 
         /// <summary>
-        /// Cuts datetime to just days
+        /// Cuts the milliseconds / microseconds off so that it can fit in the database
         /// MUST BE USED on DATETIME objects going into the database, or else the program will crash
         /// </summary>
         /// <param name="date"></param>
         /// <returns></returns>
         public static DateTime GetProcessedDateTime(DateTime date)
         {
-            return new DateTime(date.Year, date.Month, date.Day);
+            return new DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second);
         }    
 
-        public ClientData AddClient(string firstname, string middlename, string lastname, DateTime dateOfBirth)
+        public void AddClient(string firstname, string lastname, DateTime dateOfBirth, string middlename = null)
         {
-            var insertCommand = new OleDbCommand("INSERT INTO Clients(CLIENTNUMBER, FIRSTNAME, MIDDLENAME, LASTNAME, DATEOFBIRTH) VALUES (" +
-                                           "@CLIENTNUMBER, @FIRSTNAME, @MIDDLENAME, @LASTNAME, @DATEOFBIRTH);", _dbConnection);
-            var num = GetUniqueClientId();
-            insertCommand.Parameters.AddWithValue("@CLIENTNUMBER", num);
+            var insertCommand = new OleDbCommand("INSERT INTO Clients(FIRSTNAME, MIDDLENAME, LASTNAME, DATEOFBIRTH) VALUES (" +
+                                           "@FIRSTNAME, @MIDDLENAME, @LASTNAME, @DATEOFBIRTH);", _dbConnection);
+
             insertCommand.Parameters.AddWithValue("@FIRSTNAME", firstname);
             insertCommand.Parameters.AddWithValue("@MIDDLENAME", middlename);
             insertCommand.Parameters.AddWithValue("@LASTNAME", lastname);
             insertCommand.Parameters.AddWithValue("@DATEOFBIRTH", GetProcessedDateTime(dateOfBirth));
             
             _dbConnection.Open();
-            insertCommand.ExecuteNonQuery();            
-            _dbConnection.Close();
-            return new ClientData(num, firstname, middlename, lastname, dateOfBirth);
-        }
-
-        public AccountData AddAccount(int clientNum, AccountType accountType)
-        {
-            var insertCommand = new OleDbCommand("INSERT INTO Accounts(ACCOUNTNUMBER, CLIENTNUMBER, ACCOUNTTYPE) VALUES (" +
-                                                 "@ACCOUNTNUMBER, @CLIENTNUMBER, @ACCCOUNTTYPE);", _dbConnection);
-            var id = GetUniqueAccountId();
-            insertCommand.Parameters.AddWithValue("@ACCOUNTNUMBER", id);
-            insertCommand.Parameters.AddWithValue("@CLIENTNUMBER", clientNum);
-            insertCommand.Parameters.AddWithValue("@ACCOUNTTPYE", accountType.ToDatabaseString());
-
-            _dbConnection.Open();
             insertCommand.ExecuteNonQuery();
             _dbConnection.Close();
-            return new AccountData(id, clientNum, accountType);
         }
-        
+        public void AddClient(ClientData data)
+        {
+            AddClient(data.FirstName, data.LastName, data.DateOfBirth, data.MiddleName);
+        }
 
-
-
-        public CompleteDatabase(OleDbConnection connection)
+        public AccountDatabase(OleDbConnection connection)
         {
             _dbConnection = connection;
             // integrated SELECTED COMMMAND into the constructor
           
         }
 
-        public CompleteDatabase(string path) : this(GetConnection(path))
+        public AccountDatabase(string path) : this(GetConnection(path))
         {
 
         }
@@ -298,48 +208,3 @@ namespace SturdyWaffle
     }
 }
 
-
-public class ClientData
-{
-    public readonly string FirstName;
-    public readonly string MiddleName;
-    public readonly string LastName;
-
-    public readonly DateTime DateOfBirth;
-    public readonly int ClientNumber;
-
-    public ClientData(int clientNumber, string firstName, string middleName, string lastName, DateTime dateOfBirth)
-    {
-        this.FirstName = firstName;
-        this.MiddleName = middleName;
-        this.LastName = lastName;
-        this.DateOfBirth = dateOfBirth;
-        this.ClientNumber = clientNumber;
-    }
-
-    public override string ToString()
-    {
-        return $"number {ClientNumber}, name: {FirstName} {MiddleName} {LastName}, DOB: {DateOfBirth}";
-    }
-}
-
-public class AccountData
-{
-    public readonly int ClientNumber;
-    public readonly AccountType AccountType;
-    public readonly int AccountNumber;
-
-
-
-    public AccountData(int accountNumber, int clientNumber, AccountType accountType)
-    {
-        this.ClientNumber = clientNumber;
-        this.AccountType = accountType;
-        this.AccountNumber = accountNumber;
-    }
-
-    public override string ToString()
-    {
-        return $"Account Number: {AccountNumber}, ClientNumber: {ClientNumber}, AccountType: {AccountType.ToDatabaseString()}";
-    }
-}

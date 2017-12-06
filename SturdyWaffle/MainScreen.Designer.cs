@@ -30,12 +30,13 @@
         {
             this.label1 = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
-            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.dataGridClients = new System.Windows.Forms.DataGridView();
             this.dataGridView2 = new System.Windows.Forms.DataGridView();
             this.dataGridView3 = new System.Windows.Forms.DataGridView();
             this.btn_refresh = new System.Windows.Forms.Button();
             this.btn_addClient = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            this.btn_addAccount = new System.Windows.Forms.Button();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridClients)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView3)).BeginInit();
             this.SuspendLayout();
@@ -58,13 +59,14 @@
             this.textBox1.Size = new System.Drawing.Size(117, 20);
             this.textBox1.TabIndex = 1;
             // 
-            // dataGridView1
+            // dataGridClients
             // 
-            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(466, 3);
-            this.dataGridView1.Name = "dataGridView1";
-            this.dataGridView1.Size = new System.Drawing.Size(385, 199);
-            this.dataGridView1.TabIndex = 2;
+            this.dataGridClients.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridClients.Location = new System.Drawing.Point(466, 3);
+            this.dataGridClients.Name = "dataGridClients";
+            this.dataGridClients.Size = new System.Drawing.Size(385, 199);
+            this.dataGridClients.TabIndex = 2;
+            this.dataGridClients.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridClients_CellContentClick);
             // 
             // dataGridView2
             // 
@@ -102,23 +104,34 @@
             this.btn_addClient.UseVisualStyleBackColor = true;
             this.btn_addClient.Click += new System.EventHandler(this.btn_addClient_Click);
             // 
+            // btn_addAccount
+            // 
+            this.btn_addAccount.Location = new System.Drawing.Point(332, 109);
+            this.btn_addAccount.Name = "btn_addAccount";
+            this.btn_addAccount.Size = new System.Drawing.Size(105, 39);
+            this.btn_addAccount.TabIndex = 7;
+            this.btn_addAccount.Text = "Add account";
+            this.btn_addAccount.UseVisualStyleBackColor = true;
+            this.btn_addAccount.Click += new System.EventHandler(this.btn_addAccount_Click);
+            // 
             // MainScreen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(916, 592);
+            this.Controls.Add(this.btn_addAccount);
             this.Controls.Add(this.btn_addClient);
             this.Controls.Add(this.btn_refresh);
             this.Controls.Add(this.dataGridView3);
             this.Controls.Add(this.dataGridView2);
-            this.Controls.Add(this.dataGridView1);
+            this.Controls.Add(this.dataGridClients);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.label1);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "MainScreen";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridClients)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView3)).EndInit();
             this.ResumeLayout(false);
@@ -130,11 +143,12 @@
 
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridView dataGridClients;
         private System.Windows.Forms.DataGridView dataGridView2;
         private System.Windows.Forms.DataGridView dataGridView3;
         private System.Windows.Forms.Button btn_refresh;
         private System.Windows.Forms.Button btn_addClient;
+        private System.Windows.Forms.Button btn_addAccount;
     }
 }
 
