@@ -21,6 +21,9 @@ namespace SturdyWaffle
 
         private DebugDataRetriever _debug;
         private CompleteDatabase _database;
+
+        private readonly string databaseFilePath = "database.mdb";
+
         private void Form1_Load(object sender, EventArgs e)
         {
 
@@ -86,6 +89,44 @@ namespace SturdyWaffle
         }
 
         private void dataGridClients_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void btn_addCard_Click(object sender, EventArgs e)
+        {
+            // check if a client is already selected
+            var accountNum = -1;
+            var selectedCells = dataGridClients.SelectedCells;
+            if (selectedCells.Count == 1)
+            {
+                var currentRow = dataGridClients.Rows[selectedCells[0].RowIndex];
+                accountNum = (int)currentRow.Cells[0].Value; // get the clientNumber if any cells are selected
+            }
+
+            CardData data = DebugAddCard.GetAccountDataFromUser(accountNum);
+            if (data != null)
+            {
+                _database.AddCard(data.AccountNumber, data.GetPin(), data.ExpiryDate, data.IssueDate);
+                _debug.Refresh();
+            }
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            int cardId;
+            if (int.TryParse(textBox1.Text, out cardId))
+            {
+                var data = _database.GetCard(cardId);
+                if (data != null)
+                {
+                    debugDisplayCard(data);
+                }
+            }
+
+        }
+
+        private void debugDisplayCard(CardData data)
         {
 
         }

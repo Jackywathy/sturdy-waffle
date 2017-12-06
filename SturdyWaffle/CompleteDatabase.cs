@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
 using System.IO;
-
+using System.Security.Cryptography;
 
 public enum DatabaseTables
 {
@@ -118,6 +118,7 @@ namespace SturdyWaffle
 
         public static string ConnectionString { get; } = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0}";
 
+
         public static OleDbConnection GetConnection(string path)
         {
             return new OleDbConnection(String.Format(ConnectionString, path));
@@ -153,12 +154,13 @@ namespace SturdyWaffle
                                "MIDDLENAME TEXT," +
                                "LASTNAME TEXT NOT NULL," +
                                "DATEOFBIRTH DATETIME NOT NULL )",
-                dbConnection
-            );
+                dbConnection);
+
             Execute("CREATE TABLE Accounts (" +
                                "ACCOUNTNUMBER INTEGER PRIMARY KEY," +
                                "CLIENTNUMBER INTEGER NOT NULL UNIQUE," +
                                "ACCOUNTTYPE TEXT NOT NULL," +
+                               "BALANCE CURRENCY NOT NULL," +
                                "CONSTRAINT FKEY_Accounts_CLIENTNUMBER FOREIGN KEY (CLIENTNUMBER) REFERENCES Clients ON UPDATE CASCADE ON DELETE CASCADE );",
                 dbConnection
                 );
@@ -167,7 +169,7 @@ namespace SturdyWaffle
                                "ACCOUNTNUMBER INTEGER NOT NULL UNIQUE," +
                                "CVV TEXT NOT NULL," +
                                "PIN TEXT NOT NULL," +
-                               "EXPIRY DATETIME NOT NULL," +
+                               "EXPIRYDATE DATETIME NOT NULL," +
                                "ISSUEDATE DATETIME NOT NULL," +
                                "CONSTRAINT FKEY_Cards_ACCOUNTNUMBER FOREIGN KEY (ACCOUNTNUMBER) REFERENCES Accounts ON UPDATE CASCADE ON DELETE CASCADE );",
                 dbConnection
@@ -191,14 +193,16 @@ namespace SturdyWaffle
             Execute(sql, _dbConnection);
         }
 
-        public static void Execute(string sql, OleDbConnection connection)
+        public static int Execute(string sql, OleDbConnection connection)
         {
+            var rowsAffected = -1;
             using (OleDbCommand command = new OleDbCommand(sql, connection))
             {
                 connection.Open();
-                command.ExecuteNonQuery();
+                rowsAffected = command.ExecuteNonQuery();
                 connection.Close();
             }
+            return rowsAffected;
         }
 
         private int GetUniqueClientId()
@@ -267,19 +271,75 @@ namespace SturdyWaffle
 
         public AccountData AddAccount(int clientNum, AccountType accountType)
         {
-            var insertCommand = new OleDbCommand("INSERT INTO Accounts(ACCOUNTNUMBER, CLIENTNUMBER, ACCOUNTTYPE) VALUES (" +
-                                                 "@ACCOUNTNUMBER, @CLIENTNUMBER, @ACCCOUNTTYPE);", _dbConnection);
+            var insertCommand = new OleDbCommand("INSERT INTO Accounts(ACCOUNTNUMBER, CLIENTNUMBER, ACCOUNTTYPE, BALANCE) VALUES (" +
+                                                 "@ACCOUNTNUMBER, @CLIENTNUMBER, @ACCCOUNTTYPE, @BALANCE);", _dbConnection);
             var id = GetUniqueAccountId();
             insertCommand.Parameters.AddWithValue("@ACCOUNTNUMBER", id);
             insertCommand.Parameters.AddWithValue("@CLIENTNUMBER", clientNum);
             insertCommand.Parameters.AddWithValue("@ACCOUNTTPYE", accountType.ToDatabaseString());
+            insertCommand.Parameters.AddWithValue("@BALANCE", 0);
 
             _dbConnection.Open();
             insertCommand.ExecuteNonQuery();
             _dbConnection.Close();
-            return new AccountData(id, clientNum, accountType);
+            return new AccountData(id, clientNum, accountType, 0);
         }
-        
+
+
+        private RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+
+        private string GenerateCVV()
+        {
+            var max = 999;
+
+            byte[] data = new byte[4];
+            rng.GetBytes(data);
+
+            int generatedValue = Math.Abs(BitConverter.ToInt32(data, startIndex: 0));
+
+            int mod = generatedValue % max;
+
+            return mod.ToString("000");
+
+        }
+    
+
+        public CardData AddCard(int accountNum, string pin, DateTime expiryDate, DateTime issueDate)
+        {
+            var insertCommand = new OleDbCommand("INSERT INTO Cards(CARDNUMBER, ACCOUNTNUMBER, CVV, PIN, EXPIRYDATE, ISSUEDATE) VALUES (" +
+                                                 "@CARDNUMBER, @ACCOUNTNUMBER, @CVV, @PIN, @EXPIRYDATE, @ISSUEDATE);", _dbConnection);
+            var id = GetUniqueCardId();
+            var cvv = GenerateCVV();
+
+            insertCommand.Parameters.AddWithValue("@CARDNUMBER", id);
+            insertCommand.Parameters.AddWithValue("@ACCOUNTNUMBER", accountNum);
+            insertCommand.Parameters.AddWithValue("@CVV", cvv);
+            insertCommand.Parameters.AddWithValue("@PIN", pin);
+            insertCommand.Parameters.AddWithValue("@EXPIRYDATE", GetProcessedDateTime(expiryDate));
+            insertCommand.Parameters.AddWithValue("@ISSUEDATE", GetProcessedDateTime(issueDate));
+
+            _dbConnection.Open();
+            insertCommand.ExecuteNonQuery();
+            _dbConnection.Close();
+            return new CardData(id, accountNum, cvv, pin, expiryDate, issueDate);
+        }
+
+
+        public CardData GetCard(int cardNum)
+        {
+            var selectCommand = new OleDbCommand("SELECT * FROM CARDS WHERE CARDNUMBER=@CARDNUMBER", _dbConnection);
+            selectCommand.Parameters.AddWithValue("@CARDNUMBER", cardNum);
+
+            CardData data = null;
+            _dbConnection.Open();
+            var reader = selectCommand.ExecuteReader();
+            if (reader.Read()) {
+                data = new CardData(reader);
+            }
+            _dbConnection.Close();
+
+            return data;
+        }
 
 
 
@@ -298,48 +358,115 @@ namespace SturdyWaffle
     }
 }
 
-
-public class ClientData
+namespace SturdyWaffle
 {
-    public readonly string FirstName;
-    public readonly string MiddleName;
-    public readonly string LastName;
-
-    public readonly DateTime DateOfBirth;
-    public readonly int ClientNumber;
-
-    public ClientData(int clientNumber, string firstName, string middleName, string lastName, DateTime dateOfBirth)
+    public class ClientData
     {
-        this.FirstName = firstName;
-        this.MiddleName = middleName;
-        this.LastName = lastName;
-        this.DateOfBirth = dateOfBirth;
-        this.ClientNumber = clientNumber;
+        public readonly string FirstName;
+        public readonly string MiddleName;
+        public readonly string LastName;
+
+        public readonly DateTime DateOfBirth;
+        public readonly int ClientNumber;
+
+        public ClientData(int clientNumber, string firstName, string middleName, string lastName, DateTime dateOfBirth)
+        {
+            this.FirstName = firstName;
+            this.MiddleName = middleName;
+            this.LastName = lastName;
+            this.DateOfBirth = dateOfBirth;
+            this.ClientNumber = clientNumber;
+        }
+
+        public override string ToString()
+        {
+            return $"number {ClientNumber}, name: {FirstName} {MiddleName} {LastName}, DOB: {DateOfBirth}";
+        }
     }
 
-    public override string ToString()
+    public class AccountData
     {
-        return $"number {ClientNumber}, name: {FirstName} {MiddleName} {LastName}, DOB: {DateOfBirth}";
+        public readonly int ClientNumber;
+        public readonly AccountType AccountType;
+        public readonly int AccountNumber;
+        public readonly decimal Balance;
+
+
+
+        public AccountData(int accountNumber, int clientNumber, AccountType accountType, decimal balance)
+        {
+            this.ClientNumber = clientNumber;
+            this.AccountType = accountType;
+            this.AccountNumber = accountNumber;
+            this.Balance = balance;
+        }
+
+        public override string ToString()
+        {
+            return $"Account Number: {AccountNumber}, ClientNumber: {ClientNumber}, AccountType: {AccountType.ToDatabaseString()}";
+        }
     }
-}
 
-public class AccountData
-{
-    public readonly int ClientNumber;
-    public readonly AccountType AccountType;
-    public readonly int AccountNumber;
-
-
-
-    public AccountData(int accountNumber, int clientNumber, AccountType accountType)
+    public class CardData
     {
-        this.ClientNumber = clientNumber;
-        this.AccountType = accountType;
-        this.AccountNumber = accountNumber;
-    }
+        public readonly int CardNumber;
+        public readonly int AccountNumber;
+        public readonly string CVV;
+        private readonly string _pin;
+        public readonly DateTime ExpiryDate;
+        public readonly DateTime IssueDate;
 
-    public override string ToString()
-    {
-        return $"Account Number: {AccountNumber}, ClientNumber: {ClientNumber}, AccountType: {AccountType.ToDatabaseString()}";
+
+
+        public CardData(int cardNumber, int accountNumber, string cvv, string pin, DateTime expiryDate, DateTime issueDate)
+        {
+            this.CardNumber = cardNumber;
+            this.AccountNumber = accountNumber;
+            this.CVV = cvv;
+            this._pin = pin;
+            this.ExpiryDate = expiryDate;
+            this.IssueDate = issueDate;
+        }
+
+        /// <summary>
+        /// Supply this with a reader with at least 1 object piped in
+        /// </summary>
+        /// <param name="reader"></param>
+        public CardData(OleDbDataReader reader)
+        {
+            
+            int ordinal = reader.GetOrdinal("CARDNUMBER");
+            this.CardNumber = reader.GetInt32(ordinal);
+
+            ordinal = reader.GetOrdinal("ACCOUNTNUMBER");
+            this.AccountNumber = reader.GetInt32(ordinal);
+
+            ordinal = reader.GetOrdinal("CVV");
+            this.CVV = reader.GetString(ordinal);
+
+            ordinal = reader.GetOrdinal("PIN");
+            this._pin = reader.GetString(ordinal);
+
+            ordinal = reader.GetOrdinal("EXPIRYDATE");
+            this.ExpiryDate = reader.GetDateTime(ordinal);
+
+            ordinal = reader.GetOrdinal("ISSUEDATE");
+            this.IssueDate = reader.GetDateTime(ordinal);
+        }
+
+        public override string ToString()
+        {
+            return $"Card Number: {CardNumber}, AccountNum: {AccountNumber} cvv {CVV}, expiry {ExpiryDate}, issuedate {IssueDate}";
+        }
+
+        public bool CheckPin(string pin)
+        {
+            return pin == this._pin;
+        }
+
+        public string GetPin()
+        {
+            return _pin;
+        }
     }
 }

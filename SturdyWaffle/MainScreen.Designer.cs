@@ -36,6 +36,7 @@
             this.btn_refresh = new System.Windows.Forms.Button();
             this.btn_addClient = new System.Windows.Forms.Button();
             this.btn_addAccount = new System.Windows.Forms.Button();
+            this.btn_addCard = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridClients)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView3)).BeginInit();
@@ -58,6 +59,7 @@
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(117, 20);
             this.textBox1.TabIndex = 1;
+            this.textBox1.TextChanged += new System.EventHandler(this.textBox1_TextChanged);
             // 
             // dataGridClients
             // 
@@ -114,11 +116,22 @@
             this.btn_addAccount.UseVisualStyleBackColor = true;
             this.btn_addAccount.Click += new System.EventHandler(this.btn_addAccount_Click);
             // 
+            // btn_addCard
+            // 
+            this.btn_addCard.Location = new System.Drawing.Point(318, 173);
+            this.btn_addCard.Name = "btn_addCard";
+            this.btn_addCard.Size = new System.Drawing.Size(105, 39);
+            this.btn_addCard.TabIndex = 8;
+            this.btn_addCard.Text = "Add Card";
+            this.btn_addCard.UseVisualStyleBackColor = true;
+            this.btn_addCard.Click += new System.EventHandler(this.btn_addCard_Click);
+            // 
             // MainScreen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(916, 592);
+            this.Controls.Add(this.btn_addCard);
             this.Controls.Add(this.btn_addAccount);
             this.Controls.Add(this.btn_addClient);
             this.Controls.Add(this.btn_refresh);
@@ -149,6 +162,7 @@
         private System.Windows.Forms.Button btn_refresh;
         private System.Windows.Forms.Button btn_addClient;
         private System.Windows.Forms.Button btn_addAccount;
+        private System.Windows.Forms.Button btn_addCard;
     }
 }
 

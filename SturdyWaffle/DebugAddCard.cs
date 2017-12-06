@@ -10,35 +10,34 @@ using System.Windows.Forms;
 
 namespace SturdyWaffle
 {
-    public partial class DebugAddAccount : Form
+    public partial class DebugAddCard : Form
     {
-
-        public bool Cancelled = true;
-
-        public DebugAddAccount()
+        public DebugAddCard()
         {
             InitializeComponent();
         }
 
-        private void DebugAddAccount_Load(object sender, EventArgs e)
+        private void DebugAddCard_Load(object sender, EventArgs e)
         {
-            cbox_type.SelectedIndex = 0;
+
         }
 
-        public static AccountData GetAccountDataFromUser(int clientNum = -1)
+        public bool Cancelled = false;
+
+        public static CardData GetAccountDataFromUser(int accountNumber = -1)
         {
-            var form = new DebugAddAccount();
-            if (clientNum != -1)
+            var form = new DebugAddCard();
+            if (accountNumber != -1)
             {
-                form.tbox_clientNum.Text = clientNum.ToString();
+                form.tbox_accountNum.Text = accountNumber.ToString();
             }
             form.ShowDialog();
             if (!form.Cancelled)
             {
                 try
                 {
-                    return new AccountData(-1, int.Parse(form.tbox_clientNum.Text),
-                        AccountTypeExtension.FromString((string) form.cbox_type.SelectedItem), 0);
+                    return new CardData(-1, int.Parse(form.tbox_accountNum.Text), "", form.tbox_pin.Text, form.dateTimePicker1.Value, DateTime.Today);
+               
                 }
                 catch (Exception e)
                 {
@@ -47,6 +46,10 @@ namespace SturdyWaffle
             }
 
             return null;
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
 
         }
 
@@ -62,6 +65,5 @@ namespace SturdyWaffle
             this.Close();
 
         }
-
     }
 }

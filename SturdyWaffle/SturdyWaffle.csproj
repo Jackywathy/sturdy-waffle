@@ -59,6 +59,12 @@
     <Compile Include="DebugAddAccount.Designer.cs">
       <DependentUpon>DebugAddAccount.cs</DependentUpon>
     </Compile>
+    <Compile Include="DebugAddCard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DebugAddCard.Designer.cs">
+      <DependentUpon>DebugAddCard.cs</DependentUpon>
+    </Compile>
     <Compile Include="DebugAddClient.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -76,6 +82,9 @@
     <Compile Include="CompleteDatabase.cs" />
     <EmbeddedResource Include="DebugAddAccount.resx">
       <DependentUpon>DebugAddAccount.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DebugAddCard.resx">
+      <DependentUpon>DebugAddCard.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="DebugAddClient.resx">
       <DependentUpon>DebugAddClient.cs</DependentUpon>
